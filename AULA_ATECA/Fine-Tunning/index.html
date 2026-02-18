@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memoria de Práctica: Fine-Tuning con LoRA</title>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --secondary-color: #1e293b;
+            --accent-color: #059669;
+            /* Verde esmeralda para diferenciarlo del anterior */
+            --accent-light: #d1fae5;
+            --text-color: #334155;
+            --bg-color: #f8fafc;
+            --border-color: #cbd5e1;
+            --code-bg: #1e1e1e;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .document-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 70px 80px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 40px;
+            margin-bottom: 40px;
+        }
+
+        .header-tag {
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: var(--primary-color);
+            margin: 0 0 15px 0;
+            line-height: 1.2;
+        }
+
+        .header-subtitle {
+            font-size: 1.25rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        /* Tabla de Contenidos */
+        .toc {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 25px 35px;
+            margin-bottom: 50px;
+        }
+
+        .toc-title {
+            font-size: 1.4rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .toc>ul>li {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            transition: color 0.2s ease;
+        }
+
+        .toc a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-top: 60px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+            scroll-margin-top: 40px;
+        }
+
+        h2::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background-color: var(--accent-color);
+        }
+
+        h3 {
+            font-size: 1.35rem;
+            color: var(--accent-color);
+            margin-top: 40px;
+            scroll-margin-top: 40px;
+        }
+
+        p {
+            margin-bottom: 24px;
+            text-align: justify;
+            font-size: 1.05rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: #f8fafc;
+            padding: 25px;
+            border-radius: 10px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            margin: 30px 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Marcador de posición para imágenes */
+        .image-placeholder {
+            width: 100%;
+            min-height: 200px;
+            background-color: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 30px 0;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .highlight-box {
+            background: var(--accent-light);
+            border-left: 6px solid var(--accent-color);
+            padding: 30px;
+            margin: 35px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="document-container">
+        <div class="header">
+            <span class="header-tag">Memoria de Práctica</span>
+            <h1>Fine-Tuning de LLMs con LoRA en Apple Silicon</h1>
+            <div class="header-subtitle">Adaptación de modelos base a asistentes formales mediante la librería MLX en
+                macOS</div>
+        </div>
+
+        <div class="toc">
+            <h3 class="toc-title">Tabla de Contenidos</h3>
+            <ul>
+                <li><a href="#seccion-1">1. Introducción y Objetivos</a></li>
+                <li><a href="#seccion-2">2. Preparación del Entorno en Mac (Apple Silicon)</a></li>
+                <li><a href="#seccion-3">3. Creación y Estructuración del Dataset</a></li>
+                <li><a href="#seccion-4">4. Entrenamiento del Modelo (Fine-Tuning con LoRA)</a></li>
+                <li><a href="#seccion-5">5. Fusión y Conversión del Modelo (GGUF)</a></li>
+                <li><a href="#seccion-6">6. Pruebas y Resultados</a></li>
+                <li><a href="#seccion-7">7. Conclusiones y Aprendizaje</a></li>
+            </ul>
+        </div>
+
+        <h2 id="seccion-1">1. Introducción y Objetivos</h2>
+        <p>
+            El objetivo de esta práctica es realizar un proceso de Fine-Tuning (ajuste fino) sobre un Modelo de Lenguaje
+            Grande (LLM) pre-entrenado. Según la documentación teórica de la asignatura, buscamos
+            especializar un modelo generalista para convertirlo en un asistente experto en formalidad, capaz de
+            responder siempre utilizando el tratamiento de "usted" y manteniendo un tono profesional.
+        </p>
+        <p>
+            Para esta implementación, hemos adaptado el flujo de trabajo estándar (generalmente diseñado para GPUs
+            NVIDIA y Linux) para ejecutarlo nativamente en un MacBook Pro con chip M1/M2/M3 (Apple Silicon).
+            Esto se ha logrado utilizando la librería MLX de Apple, que permite un uso eficiente de la memoria unificada
+            del sistema.
+        </p>
+
+        <h2 id="seccion-2">2. Preparación del Entorno en Mac (Apple Silicon)</h2>
+        <p>
+            A diferencia del entorno con CUDA (NVIDIA), en Mac necesitamos preparar un entorno aislado que utilice la
+            potencia de la GPU de Apple (Metal). Los pasos realizados fueron los siguientes:
+        </p>
+        <ol>
+            <li><strong>Creación del directorio de trabajo:</strong> Lo primero es generar una estructura limpia para
+                evitar conflictos con otros proyectos.
+                <div class="code-block">cd /Users/ivanzsasz/2DAM/ASI/FineTuningASI</div>
+            </li>
+            <li><strong>Aislamiento del entorno (Virtual Environment):</strong> Creamos un entorno virtual (venv) para
+                instalar las librerías específicas de esta práctica sin contaminar la instalación global de Python en el
+                Mac.
+                <div class="code-block">python3 -m venv venv<br>source venv/bin/activate</div>
+            </li>
+            <li><strong>Gestión eficiente del almacenamiento:</strong> Configuramos la variable <code>HF_HOME</code>
+                para forzar a que los modelos descargados de Hugging Face se guarden dentro de nuestra carpeta de
+                proyecto. Esto facilita la limpieza posterior.
+                <div class="code-block">export HF_HOME=$(pwd)/cache</div>
+            </li>
+            <li><strong>Instalación de librerías nativas:</strong> Instalamos <code>mlx-lm</code>, la librería
+                optimizada por Apple para el entrenamiento de modelos de lenguaje en sus chips, junto con las
+                herramientas de Hugging Face.
+                <div class="code-block">pip install mlx-lm huggingface_hub</div>
+            </li>
+        </ol>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen1.png"
+                alt="Captura de pantalla de la terminal mostrando la instalación de dependencias y MLX"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 1: Captura de pantalla de la
+                terminal mostrando la instalación de dependencias y MLX</figcaption>
+        </figure>
+
+        <h2 id="seccion-3">3. Creación y Estructuración del Dataset</h2>
+        <p>
+            La calidad del dataset es el factor más crítico en el fine-tuning ("Garbage in, garbage out").
+            Hemos creado un archivo JSONL (JSON Lines) siguiendo el formato de instrucción del modelo Mistral
+            (<code>&lt;s&gt; [INST] ... [/INST] &lt;/s&gt;</code>).
+        </p>
+        <p>
+            Hemos definido pares de instrucción y respuesta ideal para que el modelo aprenda que, ante preguntas
+            comunes, debe responder con una estructura gramatical formal y educada.
+        </p>
+
+        <div class="code-block">
+            {"text": "&lt;s&gt; [INST] Hola, ¿quién eres? [/INST] Buenas tardes. Soy un asistente virtual diseñado para
+            ayudarle. ¿En qué puedo servirle hoy? &lt;/s&gt;"}
+        </div>
+
+        <p>Comandos utilizados para la creación y nombrado del archivo:</p>
+        <div class="code-block">
+            nano datos_asistente_formal.jsonl<br>
+            # (Tras guardar el contenido)<br>
+            mv datos_asistente_formal.jsonl train.jsonl
+        </div>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen2.png"
+                alt="Captura de pantalla con el contenido del dataset o la ejecución de los comandos cp train.jsonl"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 2: Captura de pantalla con
+                el contenido del dataset o la ejecución de los comandos cp train.jsonl</figcaption>
+        </figure>
+
+        <h2 id="seccion-4">4. Entrenamiento del Modelo (Fine-Tuning con LoRA)</h2>
+        <p>
+            En lugar de reentrenar todo el modelo (Full Fine-Tuning), utilizamos <strong>LoRA (Low-Rank
+                Adaptation)</strong>. Esta técnica congela el modelo base y solo entrena capas pequeñas de
+            adaptadores, siendo mucho más rápido y eficiente computacionalmente.
+        </p>
+
+        <div class="highlight-box">
+            <h4>Resolución de Incidencias Durante el Entrenamiento</h4>
+            <ul>
+                <li><strong>Primer intento (Error de configuración):</strong> Intentamos usar el argumento
+                    <code>--lora-layers</code>, pero la versión actualizada de mlx ha cambiado la nomenclatura.
+                </li>
+                <li><strong>Segundo intento (Error de Dataset):</strong> Surgió un error indicando que no encontraba el
+                    set de entrenamiento. La herramienta busca por defecto archivos con nombres
+                    estándar. Se solucionó duplicando el archivo original:
+                    <div class="code-block" style="margin: 10px 0;">cp train.jsonl valid.jsonl<br>cp train.jsonl
+                        test.jsonl</div>
+                </li>
+            </ul>
+        </div>
+
+        <p>
+            <strong>Ejecución Exitosa:</strong> Finalmente, lanzamos el entrenamiento con los parámetros ajustados para
+            el hardware local. Utilizamos el modelo <code>mistralai/Mistral-7B-v0.1</code> ,
+            configurado a 100 iteraciones , un batch size de 1 para minimizar el uso de VRAM y 4
+            capas LoRA.
+        </p>
+
+        <div class="code-block">
+            python -m mlx_lm.lora \<br>
+            --model mistralai/Mistral-7B-v0.1 \<br>
+            --train \<br>
+            --data ./ \<br>
+            --iters 100 \<br>
+            --batch-size 1 \<br>
+            --num-layers 4 \<br>
+            --adapter-path adapters
+        </div>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen3.png"
+                alt="Captura de pantalla de la terminal mostrando el progreso del entrenamiento (loss, tokens/sec)"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 3: Captura de pantalla de la
+                terminal mostrando el progreso del entrenamiento (loss, tokens/sec)</figcaption>
+        </figure>
+
+        <h2 id="seccion-5">5. Fusión y Conversión del Modelo (GGUF)</h2>
+        <p>
+            Una vez obtenidos los "adaptadores", debemos fusionarlos con el modelo base original (Mistral) y convertir
+            el resultado a un formato ejecutable estándar (GGUF) para usarlo en aplicaciones como LM Studio.
+        </p>
+
+        <h3>A. Fusión (Fuse)</h3>
+        <p>Unimos los pesos base con nuestros adaptadores LoRA mediante el siguiente comando:</p>
+        <div class="code-block">
+            python -m mlx_lm.fuse \<br>
+            --model mistralai/Mistral-7B-v0.1 \<br>
+            --adapter-path adapters \<br>
+            --save-path modelo_fusionado
+        </div>
+
+        <h3>B. Preparación de llama.cpp</h3>
+        <p>
+            Al clonar la herramienta estándar de conversión, tuvimos que resolver dependencias faltantes manualmente, ya
+            que el archivo <code>requirements.txt</code> pedía versiones incompatibles con nuestra versión de
+            Python. La solución fue la instalación manual de los paquetes esenciales:
+        </p>
+        <div class="code-block">
+            pip install numpy sentencepiece transformers gguf protobuf torch
+        </div>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen4.png"
+                alt="Captura de pantalla de la terminal mostrando la instalación exitosa de dependencias como gguf"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 4: Captura de pantalla de la
+                terminal mostrando la instalación exitosa de dependencias como gguf</figcaption>
+        </figure>
+
+        <h3>C. Conversión a GGUF</h3>
+        <p>
+            Encontramos un obstáculo técnico importante: la documentación original sugería una cuantización directa a
+            <code>q4_k_m</code> , pero el script de conversión actual no soporta esa cuantización "al
+            vuelo".
+        </p>
+        <p>
+            <strong>Solución Técnica:</strong> Optamos por convertir el modelo a precisión media
+            (<code>f16</code>). Aunque el archivo resultante es más pesado (aprox. 14GB), conserva una mayor
+            calidad y precisión en las respuestas.
+        </p>
+        <div class="code-block">
+            python llama.cpp/convert_hf_to_gguf.py modelo_fusionado \<br>
+            --outfile modelo-formal.gguf \<br>
+            --outtype f16
+        </div>
+
+        <h2 id="seccion-6">6. Pruebas y Resultados</h2>
+        <p>
+            El archivo final <code>modelo-formal.gguf</code> se importó en el entorno gráfico de LM Studio .
+        </p>
+        <p>
+            <strong>Prueba de Inferencia:</strong> Al introducir el prompt "Hola, ¿quién eres?", el modelo respondió con
+            la frase exacta entrenada en nuestro dataset: <em>"Buenas tardes. Soy un asistente virtual diseñado para
+                ayudarle..."</em>. Esto confirma empíricamente que los pesos del modelo fueron modificados
+            exitosamente mediante LoRA, logrando que el LLM abandone su comportamiento genérico y adopte la personalidad
+            formal deseada.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen5.png"
+                alt="Captura de pantalla de la interfaz de LM Studio mostrando la conversación formal con el modelo"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 5: Captura de pantalla de la
+                interfaz de LM Studio mostrando la conversación formal con el modelo</figcaption>
+        </figure>
+
+        <h2 id="seccion-7">7. Conclusiones y Aprendizaje</h2>
+        <p>
+            La realización de esta práctica ha permitido consolidar varios conceptos clave del ecosistema de
+            Fine-Tuning:
+        </p>
+        <ul>
+            <li><strong>Viabilidad en Apple Silicon:</strong> Se ha demostrado que es posible realizar entrenamientos de
+                IA complejos en hardware de consumo usando librerías optimizadas como MLX, sin depender de servidores
+                industriales.</li>
+            <li><strong>Importancia del Dataset:</strong> Los errores encontrados refuerzan la máxima de que la
+                preparación y estructuración de los datos es la fase más sensible del desarrollo de IA.</li>
+            <li><strong>Gestión de Dependencias:</strong> La resolución de conflictos de versiones es una habilidad
+                esencial, ya que el ecosistema de IA (pip, torch, mlx) evoluciona a un ritmo vertiginoso.
+            </li>
+            <li><strong>Flexibilidad de LoRA:</strong> Hemos comprobado en tiempo real cómo la técnica LoRA permite
+                modificar el comportamiento de un modelo gigante (7B parámetros) ajustando solo una fracción mínima de
+                sus pesos, democratizando el entrenamiento de LLMs.</li>
+        </ul>
+
+        <div class="footer">
+            <strong>Memoria de Práctica: ASI / 2DAM</strong><br>
+            Módulo: Fine-Tuning, LoRA, MLX y Cuantización GGUF.
+        </div>
+    </div>
+
+</body>
+
+</html>

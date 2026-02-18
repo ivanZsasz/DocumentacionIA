@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Despliegue de LLM en Arquitectura Blackwell (RTX 5060 Ti)</title>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --secondary-color: #1e293b;
+            --accent-color: #0f766e;
+            /* Teal oscuro elegante */
+            --accent-light: #ccfbf1;
+            --text-color: #334155;
+            --bg-color: #f8fafc;
+            --border-color: #cbd5e1;
+            --code-bg: #1e1e1e;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .document-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 70px 80px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 40px;
+            margin-bottom: 40px;
+        }
+
+        .header-tag {
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: var(--primary-color);
+            margin: 0 0 15px 0;
+            line-height: 1.2;
+        }
+
+        .author-meta {
+            margin-top: 25px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            text-align: left;
+            font-size: 0.95rem;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .author-meta strong {
+            color: var(--primary-color);
+        }
+
+        /* Tabla de Contenidos */
+        .toc {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 25px 35px;
+            margin-bottom: 50px;
+        }
+
+        .toc-title {
+            font-size: 1.4rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .toc>ul>li {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .toc ul ul {
+            padding-left: 20px;
+            margin-top: 5px;
+            font-weight: 400;
+            font-size: 0.95rem;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            transition: color 0.2s ease;
+        }
+
+        .toc a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-top: 60px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+            scroll-margin-top: 40px;
+        }
+
+        h2::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background-color: var(--accent-color);
+        }
+
+        h3 {
+            font-size: 1.35rem;
+            color: var(--accent-color);
+            margin-top: 40px;
+            scroll-margin-top: 40px;
+        }
+
+        p {
+            margin-bottom: 24px;
+            text-align: justify;
+            font-size: 1.05rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            margin: 25px 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Marcadores de imágenes */
+        .image-placeholder {
+            width: 100%;
+            min-height: 220px;
+            background-color: #f8fafc;
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 35px 0;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .image-placeholder:hover {
+            background-color: #f1f5f9;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .alert-box {
+            background: #fff1f2;
+            border-left: 6px solid #e11d48;
+            padding: 20px 25px;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .alert-box h4 {
+            margin-top: 0;
+            color: #be123c;
+            margin-bottom: 10px;
+        }
+
+        .alert-box strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="document-container">
+        <div class="header">
+            <span class="header-tag">Memoria Técnica Final</span>
+            <h1>Despliegue de LLM en Arquitectura Blackwell (RTX 5060 Ti) y Entrenamiento de "Cervantes-GPT"</h1>
+
+            <div class="author-meta">
+                <strong>Autor:</strong> Ivan Tadeo Poemape<br>
+                <strong>Hardware:</strong> NVIDIA GeForce RTX 5060 Ti (Arquitectura Blackwell)<br>
+                <strong>Sistema:</strong> Windows 11 + WSL2 (Ubuntu 24.04)<br>
+                <strong>Fecha:</strong> 12 de Febrero, 2026
+            </div>
+        </div>
+
+        <div class="toc">
+            <div class="toc-title">Tabla de Contenidos</div>
+            <ul>
+                <li><a href="#intro">1. El Reto Tecnológico: Arquitectura Blackwell</a></li>
+                <li><a href="#configuracion">2. Configuración del Entorno "Bleeding Edge"</a>
+                    <ul>
+                        <li><a href="#wsl">2.1. Instalación de WSL2 y Entornos Virtuales</a></li>
+                        <li><a href="#pytorch">2.2. Solución al Error SM_120 (PyTorch Nightly)</a></li>
+                        <li><a href="#validacion">2.3. Validación de Hardware</a></li>
+                    </ul>
+                </li>
+                <li><a href="#entrenamiento">3. Entrenamiento del Modelo "Cervantes-GPT"</a></li>
+                <li><a href="#conversion">4. Compilación y Conversión a GGUF</a>
+                    <ul>
+                        <li><a href="#dependencias">4.1 Gestión de Dependencias Crítica</a></li>
+                        <li><a href="#cmake">4.2 Compilación con CMake</a></li>
+                        <li><a href="#exportacion">4.3 Exportación</a></li>
+                    </ul>
+                </li>
+                <li><a href="#despliegue">5. Despliegue Final en LM Studio</a>
+                    <ul>
+                        <li><a href="#estructura">5.1. Estructura de Directorios Crítica</a></li>
+                        <li><a href="#seguridad">5.2. Superación de Barreras de Seguridad (Windows)</a></li>
+                    </ul>
+                </li>
+                <li><a href="#conclusion">6. Conclusión y Resultados</a></li>
+            </ul>
+        </div>
+
+        <h2 id="intro">1. El Reto Tecnológico: Arquitectura Blackwell</h2>
+        <p>
+            El objetivo de este proyecto es entrenar, convertir y desplegar un modelo GPT-2 ("Cervantes-GPT") utilizando
+            la última generación de tarjetas gráficas NVIDIA. Sin embargo, al intentar utilizar la <strong>RTX 5060
+                Ti</strong> con el stack de software estándar de IA, nos encontramos con un desafío de compatibilidad
+            crítica.
+        </p>
+        <div class="alert-box">
+            <strong>Error Crítico Detectado:</strong>
+            "NVIDIA GeForce RTX 5060 Ti with CUDA capability sm_120 is not compatible with the current PyTorch
+            installation."
+        </div>
+        <p>
+            <strong>Diagnóstico:</strong> La nueva arquitectura Blackwell introduce el conjunto de instrucciones
+            <code>sm_120</code>, el cual no está presente en los binarios estables actuales de PyTorch (2.5/2.6). Esto
+            obligó a migrar todo el desarrollo a un entorno <em>Nightly</em> (Experimental).
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen1.png"
+                alt="Error de compatibilidad sm_120 en la terminal"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 1: Captura de pantalla
+                mostrando el error de compatibilidad sm_120 en la terminal</figcaption>
+        </figure>
+
+        <h2 id="configuracion">2. Configuración del Entorno "Bleeding Edge"</h2>
+        <p>
+            Para aprovechar la aceleración por hardware de la RTX 5060 Ti, se descartó el uso de Windows nativo en favor
+            del Subsistema de Linux para Windows (WSL2), debido a su mejor gestión de memoria y compatibilidad con
+            herramientas de IA.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen2.png" alt="Configuración del Entorno Inicial WSl2"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 2: Configuración del Entorno
+                Inicial WSL2</figcaption>
+        </figure>
+
+        <h3 id="wsl">2.1. Instalación de WSL2 y Entornos Virtuales</h3>
+        <p>
+            Para habilitar el soporte de sm_120, se configuró un entorno virtual en WSL2 con una compilación específica
+            de PyTorch. Además, se aisló el proyecto en un entorno virtual (venv).
+        </p>
+        <div class="code-block">
+            wsl --install
+            python3 -m venv venv
+            source venv/bin/activate
+        </div>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen3.png" alt="Creación del entorno virtual (venv)"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 3: Creación y activación del
+                entorno virtual (venv)</figcaption>
+        </figure>
+
+        <h3 id="pytorch">2.2. Solución al Error SM_120 (PyTorch Nightly)</h3>
+        <p>
+            Se identificó que el soporte para Blackwell requiere CUDA 12.8. Dado que los paquetes estables no soportan
+            esta arquitectura, se procedió a instalar la versión <strong>Nightly (Preview)</strong> de PyTorch,
+            compatible con <code>cu128</code>.
+        </p>
+        <div class="code-block">
+            pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu128
+        </div>
+        <p>
+            Además, se instalaron las dependencias auxiliares por separado para evitar conflictos.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen4.png" alt="Instalación de librerías de HuggingFace"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 4: Instalación de librerías
+                de HuggingFace (transformers, datasets, accelerate)</figcaption>
+        </figure>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen5.png"
+                alt="Instalación de PyTorch Nightly finalizando correctamente"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 5: Captura de la instalación
+                de PyTorch Nightly finalizando correctamente</figcaption>
+        </figure>
+
+        <h3 id="validacion">2.3. Validación de Hardware</h3>
+        <p>
+            Se ejecutó un script de verificación para confirmar que la arquitectura sm_120 era reconocida por PyTorch.
+        </p>
+        <div class="code-block">
+            import torch
+            print(torch.cuda.get_arch_list())
+            # Resultado incluye: 'sm_120'
+        </div>
+
+        <h2 id="entrenamiento">3. Entrenamiento del Modelo "Cervantes-GPT"</h2>
+        <p>
+            Una vez estabilizado el entorno con la RTX 5060 Ti, se procedió al entrenamiento del modelo utilizando el
+            texto completo de "El Quijote". El objetivo era crear un modelo capaz de autocompletar texto imitando el
+            estilo y vocabulario de Miguel de Cervantes.
+        </p>
+        <p>
+            Se utilizó una arquitectura <strong>distilgpt2</strong> (Transformer Decoder) y se monitorizó el rendimiento
+            de la GPU.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen6.png"
+                alt="Log de la terminal mostrando la pérdida (loss) disminuyendo durante el entrenamiento"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 6: Gráfica o log de la
+                terminal mostrando la pérdida (loss) disminuyendo durante el entrenamiento</figcaption>
+        </figure>
+
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen7.png" alt="Generación de texto con el modelo NanoGPT"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 7: Prueba de generación de
+                texto resultando en castellano antiguo</figcaption>
+        </figure>
+
+        <h2 id="conversion">4. Compilación y Conversión a GGUF</h2>
+
+        <h3 id="dependencias">4.1 Gestión de Dependencias Crítica</h3>
+        <p>
+            Para la conversión, utilizamos <code>llama.cpp</code>. El archivo <code>requirements.txt</code> intentaba
+            forzar versiones antiguas, por lo que se instalaron manualmente las librerías necesarias.
+        </p>
+        <div class="code-block">
+            pip install gguf protobuf sentencepiece numpy
+        </div>
+
+        <h3 id="cmake">4.2 Compilación con CMake</h3>
+        <p>
+            Debido a que estamos en un entorno Linux moderno con hardware muy reciente, fue necesario compilar las
+            herramientas desde el código fuente utilizando el sistema de construcción actual.
+        </p>
+        <div class="code-block">
+            cmake -B build
+            cmake --build build --config Release -j 8
+        </div>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen8.png" alt="Instalación de herramientas de compilación"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 8: Instalación de
+                herramientas de compilación y ejecución de CMake</figcaption>
+        </figure>
+
+        <h3 id="exportacion">4.3 Exportación del Modelo</h3>
+        <p>
+            El modelo entrenado (en formato HuggingFace) fue convertido al formato de cuantización universal
+            <strong>GGUF</strong>, optimizándolo para la inferencia local.
+        </p>
+        <div class="code-block">
+            python3 convert_hf_to_gguf.py ../modelo_quijote_hf --outfile ../quijote_5060ti.gguf
+        </div>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen9.png"
+                alt="Terminal mostrando la ejecución exitosa del script de conversión a GGUF"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 9: Terminal mostrando la
+                ejecución exitosa del script de conversión a GGUF</figcaption>
+        </figure>
+
+        <h2 id="despliegue">5. Despliegue Final en LM Studio</h2>
+        <p>
+            El paso final consistió en transferir el archivo <code>quijote_5060ti.gguf</code> desde el entorno WSL2 al
+            sistema anfitrión Windows para ejecutarlo en LM Studio con aceleración GPU.
+        </p>
+
+        <h3 id="estructura">5.1. Estructura de Directorios Crítica</h3>
+        <p>
+            LM Studio no reconocía el modelo inicialmente. Fue necesario investigar y replicar una estructura de
+            carpetas estricta para que el software detectara el modelo local.
+        </p>
+        <div class="code-block">
+            C:\Users\[Usuario]\.cache\lm-studio\models\Paco\Quijote5060\
+        </div>
+
+        <h3 id="seguridad">5.2. Superación de Barreras de Seguridad (Windows)</h3>
+        <p>
+            Al intentar cargar el modelo, nos encontramos con un bloqueo de seguridad. <strong>Smart App
+                Control</strong> o Windows Defender bloquearon la ejecución del motor de inferencia por no estar firmado
+            digitalmente.
+        </p>
+        <p>
+            <strong>Solución:</strong> Se requirió ejecutar LM Studio con privilegios de Administrador y añadir la
+            carpeta <code>.lmstudio</code> a las exclusiones de seguridad.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen10.png"
+                alt="Captura de LM Studio funcionando con el modelo cargado y generando texto"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 10: Captura de LM Studio
+                funcionando con el modelo cargado y generando texto con estilo del Siglo de Oro</figcaption>
+        </figure>
+
+        <h3 id="gpu-monitoring">5.3. Monitoreo de Uso de GPU</h3>
+        <p>
+            Durante todo el proceso, fue crucial monitorizar el consumo de recursos de la tarjeta gráfica para asegurar
+            que la RTX 5060 Ti estaba siendo utilizada correctamente y no existían cuellos de botella en la memoria
+            VRAM.
+        </p>
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen11.png" alt="Monitoreo de la GPU durante el entrenamiento"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 11: Monitoreo de uso de GPU
+                (RTX 5060 Ti) evidenciando la carga de trabajo en los núcleos CUDA/Tensor</figcaption>
+        </figure>
+
+        <h2 id="conclusion">6. Conclusión y Resultados</h2>
+        <p>
+            El proyecto ha sido un éxito rotundo. Se ha logrado poner en marcha una <strong>NVIDIA RTX 5060 Ti</strong>
+            para tareas de Deep Learning antes de que exista soporte oficial estable, demostrando la capacidad para
+            trabajar en entornos experimentales (*bleeding edge*).
+        </p>
+        <p>
+            El modelo resultante, "Cervantes-GPT", es funcional, capaz de generar texto con el estilo del Siglo de Oro,
+            y se ejecuta instantáneamente de manera local gracias a la optimización GGUF y la potencia de la
+            arquitectura Blackwell.
+        </p>
+
+        <div class="footer">
+            Memoria Técnica de Proyecto - Ampliación de Sistemas Informáticos (ASI) - 2026
+        </div>
+    </div>
+
+</body>
+
+</html>

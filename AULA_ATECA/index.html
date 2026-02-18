@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AULA ATECA | Portafolio de Inteligencia Artificial</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --hover-border: #818cf8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.5;
+        }
+
+        .hero-content {
+            z-index: 2;
+            max-width: 900px;
+        }
+
+        .badge {
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            display: inline-block;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 25px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 40px;
+            animation: bounce 2s infinite;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* PROJECTS GRID */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 20px;
+        }
+
+        .section-header {
+            margin-bottom: 60px;
+            border-left: 5px solid #a855f7;
+            padding-left: 20px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: var(--text-primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .project-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 320px;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--hover-border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .project-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            transition: background 0.3s;
+            align-self: flex-start;
+        }
+
+        .card-link:hover {
+            background: var(--accent-gradient);
+        }
+
+        .tech-tags {
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.3);
+            color: #a855f7;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: #0b1120;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            .hero {
+                height: auto;
+                padding: 100px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="hero">
+        <div class="hero-content">
+            <span class="badge">Aula ATECA | Innovación Tecnológica</span>
+            <h1>Ingeniería de IA<br>Sin Límites</h1>
+            <p class="subtitle">
+                Bienvenido al nexo donde la teoría se encuentra con el silicio. Explora un portafolio de proyectos
+                avanzados que abarcan desde el entrenamiento de redes neuronales desde cero hasta el despliegue en
+                arquitecturas de hardware de última generación.
+            </p>
+        </div>
+        <div class="scroll-down">Descubre los Proyectos ↓</div>
+    </header>
+
+    <div class="container">
+        <div class="section-header">
+            <h2>Proyectos Destacados</h2>
+            <p style="color: #94a3b8;">Colección de implementaciones técnicas y documentación de ingeniería.</p>
+        </div>
+
+        <div class="grid">
+
+            <article class="project-card">
+                <div>
+                    <div class="card-icon">👨‍🍳</div>
+                    <div class="tech-tags">
+                        <span class="tag">PyTorch</span>
+                        <span class="tag">From Scratch</span>
+                        <span class="tag">Transformer</span>
+                    </div>
+                    <h3 class="card-title">Creación de un LLM</h3>
+                    <p class="card-desc">
+                        Implementación pura de una arquitectura GPT entrenada con inicialización aleatoria. Un desafío
+                        de ingeniería para crear un asistente culinario sin conocimientos previos, aprendiendo gramática
+                        y recetas estadística pura.
+                    </p>
+                </div>
+                <a href="./CreacionLLM/index.html" class="card-link">Ver Documentación →</a>
+            </article>
+
+            <article class="project-card">
+                <div>
+                    <div class="card-icon">🍎</div>
+                    <div class="tech-tags">
+                        <span class="tag">Apple Silicon</span>
+                        <span class="tag">LoRA</span>
+                        <span class="tag">MLX</span>
+                    </div>
+                    <h3 class="card-title">Fine-Tunning</h3>
+                    <p class="card-desc">
+                        Optimización de modelos LLM utilizando la librería MLX de Apple. Adaptación de Mistral-7B para
+                        comportamientos formales utilizando adaptadores de bajo rango (LoRA) en hardware de consumo.
+                    </p>
+                </div>
+                <a href="./Fine-Tunning/index.html" class="card-link">Ver Documentación →</a>
+            </article>
+
+            <article class="project-card">
+                <div>
+                    <div class="card-icon">🤖</div>
+                    <div class="tech-tags">
+                        <span class="tag">Agentes IA</span>
+                        <span class="tag">VS Code</span>
+                        <span class="tag">Local Host</span>
+                    </div>
+                    <h3 class="card-title">Agente</h3>
+                    <p class="card-desc">
+                        Integración de un ecosistema de desarrollo 100% local y privado. Conexión entre LM Studio y
+                        Visual Studio Code mediante Kilo Code para asistencia de programación sin dependencia de la
+                        nube.
+                    </p>
+                </div>
+                <a href="./Agente/index.html" class="card-link">Ver Documentación →</a>
+            </article>
+
+            <article class="project-card">
+                <div>
+                    <div class="card-icon">⚖️</div>
+                    <div class="tech-tags">
+                        <span class="tag">C++</span>
+                        <span class="tag">GGUF</span>
+                        <span class="tag">Optimización</span>
+                    </div>
+                    <h3 class="card-title">Cuantización</h3>
+                    <p class="card-desc">
+                        Compilación nativa de <code>llama.cpp</code> y proceso de compresión de modelos. Reducción
+                        drástica del uso de memoria VRAM convirtiendo tensores de FP16 a 4 bits para ejecución en
+                        dispositivos limitados.
+                    </p>
+                </div>
+                <a href="./Cuantizacion/index.html" class="card-link">Ver Documentación →</a>
+            </article>
+
+            <article class="project-card">
+                <div>
+                    <div class="card-icon">⚡</div>
+                    <div class="tech-tags">
+                        <span class="tag">NVIDIA Blackwell</span>
+                        <span class="tag">Bleeding Edge</span>
+                        <span class="tag">WSL2</span>
+                    </div>
+                    <h3 class="card-title">Pre entrenamiento</h3>
+                    <p class="card-desc">
+                        Superando los límites del software estable. Entrenamiento de "Cervantes-GPT" en la nueva
+                        arquitectura Blackwell solucionando incompatibilidades críticas mediante PyTorch Nightly y
+                        compilación manual.
+                    </p>
+                </div>
+                <a href="./PreEntrenamiento/index.html" class="card-link">Ver Documentación →</a>
+            </article>
+
+            <article class="project-card">
+                <div>
+                    <div class="card-icon">⚗️</div>
+                    <div class="tech-tags">
+                        <span class="tag">Knowledge Distillation</span>
+                        <span class="tag">Teacher-Student</span>
+                        <span class="tag">BERT</span>
+                    </div>
+                    <h3 class="card-title">Destilación</h3>
+                    <p class="card-desc">
+                        Implementación de la técnica Profesor-Estudiante para comprimir la inteligencia de modelos
+                        masivos en arquitecturas compactas (BERT-Tiny), logrando eficiencia extrema con mínima pérdida
+                        de precisión.
+                    </p>
+                </div>
+                <a href="./Destilacion/index.html" class="card-link">Ver Documentación →</a>
+            </article>
+
+        </div>
+    </div>
+
+    <footer>
+        <p>AULA ATECA | Iván Tadeo Poemape & Equipo</p>
+        <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.6;">Desarrollo de Soluciones de IA Avanzada - 2026</p>
+    </footer>
+
+</body>
+
+</html>

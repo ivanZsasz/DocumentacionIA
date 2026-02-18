@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Técnico: Destilación de Conocimiento (Knowledge Distillation)</title>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            /* Slate 900 */
+            --secondary-color: #334155;
+            /* Slate 700 */
+            --accent-color: #7c3aed;
+            /* Violeta intenso para diferenciar */
+            --accent-light: #ddd6fe;
+            --text-color: #1e293b;
+            --bg-color: #f8fafc;
+            --border-color: #e2e8f0;
+            --code-bg: #1e1e1e;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .document-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 70px 80px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 40px;
+            margin-bottom: 50px;
+        }
+
+        .status-tag {
+            background: var(--accent-color);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin: 0 0 15px 0;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+
+        .meta-data {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            text-align: left;
+            font-size: 0.95rem;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+
+        .meta-data strong {
+            color: var(--accent-color);
+        }
+
+        /* Navigation */
+        .toc {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 50px;
+        }
+
+        .toc-header {
+            font-weight: 800;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            display: block;
+            border-bottom: 2px solid var(--accent-light);
+            padding-bottom: 10px;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc li {
+            margin-bottom: 10px;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .toc a:before {
+            content: "•";
+            color: var(--accent-color);
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .toc a:hover {
+            color: var(--accent-color);
+            transform: translateX(5px);
+        }
+
+        /* Typography & Layout */
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-top: 60px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: var(--accent-color);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+            margin-top: 40px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 24px;
+            text-align: justify;
+        }
+
+        /* Image Placeholders */
+        figure {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        figcaption {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #64748b;
+            text-align: center;
+            font-style: italic;
+        }
+
+        /* Tech Components */
+        .code-snippet {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            border-left: 4px solid var(--accent-color);
+            margin: 25px 0;
+        }
+
+        .alert-box {
+            background: #fff1f2;
+            border-left: 5px solid #ef4444;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .alert-title {
+            color: #991b1b;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .metric-card {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            display: block;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+        }
+
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="document-container">
+        <div class="header">
+            <span class="status-tag">Informe Técnico Final</span>
+            <h1>Implementación de Modelos de IA mediante Destilación de Conocimiento (Knowledge Distillation)</h1>
+
+            <div class="meta-data">
+                <strong>Autor:</strong> Ivan Tadeo Poemape<br>
+                <strong>Arquitectura Objetivo:</strong> NVIDIA RTX 5060 Ti (Blackwell)<br>
+                <strong>Técnica:</strong> Teacher-Student (BERT-Tiny asistido por DistilBERT)<br>
+                <strong>Fecha de Ejecución:</strong> 25 de Enero de 2026
+            </div>
+        </div>
+
+        <div class="toc">
+            <span class="toc-header">Tabla de Contenidos</span>
+            <ul>
+                <li><a href="#intro">1. Introducción y Marco Teórico</a></li>
+                <li><a href="#env">2. Preparación del Sistema y Configuración del Entorno</a></li>
+                <li><a href="#methodology">3. Metodología: Arquitectura Profesor-Estudiante</a></li>
+                <li><a href="#troubleshooting">4. Registro de Errores Críticos y Soluciones de Ingeniería</a></li>
+                <li><a href="#validation">5. Validación Experimental y Métricas</a></li>
+                <li><a href="#conclusion">6. Conclusiones</a></li>
+            </ul>
+        </div>
+
+        <h2 id="intro">1. Introducción y Marco Teórico</h2>
+        <p>
+            El presente reporte detalla el proceso de ingeniería para la implementación de una técnica de compresión de
+            modelos conocida como <strong>Knowledge Distillation</strong> (Destilación de Conocimiento). El objetivo
+            fundamental es transferir la capacidad de generalización de un modelo masivo y costoso computacionalmente
+            (el "Profesor" o Teacher) a una arquitectura compacta y eficiente (el "Estudiante" o Student).
+        </p>
+        <p>
+            Este proyecto adquiere una relevancia especial al ejecutarse sobre hardware de última generación,
+            específicamente la <strong>NVIDIA RTX 5060 Ti</strong>, lo que presentó desafíos únicos de compatibilidad de
+            software que requirieron soluciones avanzadas de configuración de entornos en Windows 11.
+        </p>
+
+        <h2 id="env">2. Preparación del Sistema y Configuración del Entorno</h2>
+        <p>
+            La fase inicial se centró en la preparación del ecosistema de software. Se detectó una incompatibilidad
+            crítica entre Python 3.13 y las librerías actuales de Deep Learning, lo que obligó a realizar un
+            <em>downgrade</em> controlado a la versión 3.11.9 para garantizar la estabilidad.
+        </p>
+
+        <figure>
+            <img src="Imagen1.png" alt="Captura de la terminal mostrando la versión de Python y creación del entorno"
+                style="max-width: 100%; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption>Figura 1: Verificación de versiones y creación de la estructura de directorios.</figcaption>
+        </figure>
+
+        <p>
+            Para mantener la reproducibilidad del experimento, se aisló el proyecto mediante un entorno virtual
+            (<code>venv</code>). Además, debido a la arquitectura <code>sm_120</code> de la serie RTX 50, fue imperativo
+            instalar las versiones <em>Nightly</em> (experimentales) de PyTorch, ya que las versiones estables aún no
+            soportan este conjunto de instrucciones.
+        </p>
+
+        <div class="code-snippet">
+            mkdir PracticaDestilacion
+            cd PracticaDestilacion
+            python -m venv venv
+            pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu124
+        </div>
+
+        <figure>
+            <img src="Imagen2.png" alt="Captura de la instalación de dependencias y PyTorch Nightly"
+                style="max-width: 100%; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption>Figura 2: Instalación de librerías transformers, datasets y accelerate.</figcaption>
+        </figure>
+
+        <h2 id="methodology">3. Metodología: Arquitectura Profesor-Estudiante</h2>
+        <p>
+            El núcleo del experimento se basa en el script <code>destilacion_gpu.py</code>. Se seleccionó la siguiente
+            topología de modelos para maximizar la tasa de compresión:
+        </p>
+        <ul>
+            <li><strong>Modelo Profesor:</strong> <code>distilbert-base-uncased-finetuned-sst-2-english</code> (67
+                Millones de parámetros). Un modelo robusto y ya ajustado para análisis de sentimientos.</li>
+            <li><strong>Modelo Estudiante:</strong> <code>prajjwal1/bert-tiny</code> (4.4 Millones de parámetros). Una
+                versión minimalista de BERT diseñada para entornos embebidos o móviles.</li>
+        </ul>
+
+        <figure>
+            <img src="Imagen3.png" alt="Captura del código o inicio del script de destilación"
+                style="max-width: 100%; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption>Figura 3: Configuración inicial de los modelos Teacher y Student en el script.</figcaption>
+        </figure>
+
+        <h2 id="troubleshooting">4. Registro de Errores Críticos y Soluciones de Ingeniería</h2>
+        <p>
+            Durante la ejecución, el equipo se enfrentó a múltiples obstáculos técnicos derivados de la novedad del
+            hardware y las actualizaciones de las librerías. A continuación se documenta la bitácora de resolución de
+            conflictos:
+        </p>
+
+        <div class="alert-box">
+            <span class="alert-title">Conflicto 1: Deprecación de API</span>
+            Se encontró un <code>TypeError</code> debido al parámetro <code>evaluation_strategy</code>. En las versiones
+            modernas de la librería <em>Transformers</em> (v4.4x), este parámetro ha sido renombrado.
+            <br><strong>Solución:</strong> Refactorización del código para utilizar <code>eval_strategy</code>.
+        </div>
+
+        <figure>
+            <img src="Imagen4.png" alt="Captura mostrando el error de evaluation_strategy o la corrección"
+                style="max-width: 100%; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption>Figura 4: Debugging del script de entrenamiento.</figcaption>
+        </figure>
+
+        <div class="alert-box">
+            <span class="alert-title">Conflicto 2: Incompatibilidad de Hardware (SM_120)</span>
+            A pesar de usar versiones Nightly, persistieron inestabilidades con la arquitectura Blackwell de la RTX 5060
+            Ti durante el cálculo de gradientes complejos.
+            <br><strong>Solución:</strong> Se optó por una estrategia de mitigación forzando la ejecución en CPU
+            mediante la variable de entorno <code>CUDA_VISIBLE_DEVICES=""</code>.
+        </div>
+
+        <figure>
+            <img src="Imagen5.png" alt="Captura del error CUDA o la configuración para forzar CPU"
+                style="max-width: 100%; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption>Figura 5: Reconfiguración del dispositivo de entrenamiento (Device Agnostic).</figcaption>
+        </figure>
+
+        <p>
+            Adicionalmente, se resolvieron problemas de compatibilidad de tensores mixtos forzando explícitamente
+            <code>device="cpu"</code> en todos los componentes del modelo para evitar discrepancias en la asignación de
+            memoria.
+        </p>
+
+        <figure>
+            <img src="Imagen6.png" alt="Captura de la ejecución del entrenamiento en progreso"
+                style="max-width: 100%; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption>Figura 6: Progreso del entrenamiento (Training Loss) ejecutándose en CPU.</figcaption>
+        </figure>
+
+        <h2 id="validation">5. Validación Experimental y Métricas</h2>
+        <p>
+            Tras un proceso de entrenamiento intensivo de aproximadamente 2 horas (completando 12,630 pasos), se
+            procedió a la fase de validación para cuantificar la pérdida de calidad frente a la ganancia de eficiencia.
+        </p>
+
+        <div class="metric-grid">
+            <div class="metric-card">
+                <span class="metric-value">82.45%</span>
+                <span class="metric-label">Precisión Final (Accuracy)</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">15.3x</span>
+                <span class="metric-label">Factor de Compresión</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">4.4M</span>
+                <span class="metric-label">Parámetros (Estudiante)</span>
+            </div>
+        </div>
+
+        <p>
+            El modelo destilado logró retener una precisión superior al 82%, siendo 15 veces más pequeño que su
+            profesor. Esto valida la hipótesis de que la información semántica densa puede ser comprimida
+            eficientemente.
+        </p>
+
+        <figure>
+            <img src="Imagen7.png" alt="Captura final con los resultados métricos o la finalización del script"
+                style="max-width: 100%; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption>Figura 7: Resultados finales de la validación comparativa.</figcaption>
+        </figure>
+
+        <h2 id="conclusion">6. Conclusiones</h2>
+        <p>
+            La práctica ha demostrado exitosamente la viabilidad de implementar técnicas avanzadas de <em>Knowledge
+                Distillation</em> en entornos locales. A pesar de los retos impuestos por el hardware
+            <em>bleeding-edge</em> (RTX Serie 50), se logró configurar un entorno funcional y producir un modelo
+            altamente eficiente.
+        </p>
+        <p>
+            El resultado final es un modelo BERT-Tiny optimizado, capaz de operar en dispositivos con recursos limitados
+            con una pérdida de precisión marginal comparada con su contraparte masiva, cumpliendo con todos los
+            objetivos pedagógicos y técnicos planteados.
+        </p>
+
+        <div class="footer">
+            Documentación Técnica Generada para el Proyecto de Ampliación de Sistemas Informáticos (ASI) - 2026<br>
+            Autor: Ivan Tadeo Poemape
+        </div>
+    </div>
+
+</body>
+
+</html>

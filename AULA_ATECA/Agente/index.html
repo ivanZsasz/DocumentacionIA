@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Despliegue e Integración de Modelos LLM Locales</title>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --secondary-color: #1e293b;
+            --accent-color: #4f46e5;
+            /* Índigo elegante para este nuevo proyecto */
+            --accent-light: #e0e7ff;
+            --text-color: #334155;
+            --bg-color: #f8fafc;
+            --border-color: #cbd5e1;
+            --code-bg: #1e1e1e;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .document-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 70px 80px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 40px;
+            margin-bottom: 40px;
+        }
+
+        .header-tag {
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: var(--primary-color);
+            margin: 0 0 15px 0;
+            line-height: 1.2;
+        }
+
+        .header-subtitle {
+            font-size: 1.25rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .author-meta {
+            margin-top: 25px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            display: inline-block;
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .author-meta strong {
+            color: var(--primary-color);
+        }
+
+        /* Tabla de Contenidos */
+        .toc {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 25px 35px;
+            margin-bottom: 50px;
+        }
+
+        .toc-title {
+            font-size: 1.4rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .toc>ul>li {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            transition: color 0.2s ease;
+        }
+
+        .toc a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-top: 60px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+            scroll-margin-top: 40px;
+        }
+
+        h2::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background-color: var(--accent-color);
+        }
+
+        p {
+            margin-bottom: 24px;
+            text-align: justify;
+            font-size: 1.05rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: #f8fafc;
+            padding: 25px;
+            border-radius: 10px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            margin: 30px 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Marcador de posición para imágenes (Ampliado para este doc) */
+        .image-placeholder {
+            width: 100%;
+            min-height: 220px;
+            background-color: #f1f5f9;
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 35px 0;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .image-placeholder:hover {
+            background-color: #e2e8f0;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .highlight-box {
+            background: var(--accent-light);
+            border-left: 6px solid var(--accent-color);
+            padding: 30px;
+            margin: 35px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="document-container">
+        <div class="header">
+            <span class="header-tag">Memoria de Integración</span>
+            <h1>Despliegue e Integración de Modelos LLM Locales en VS Code</h1>
+            <div class="header-subtitle">Configuración de un agente de IA offline mediante Kilo Code y LM Studio</div>
+
+            <div class="author-meta">
+                <strong>Autor:</strong> Ivan Tadeo Poemape<br>
+                <strong>Asignatura:</strong> Ampliación de Sistemas Informáticos (ASI)<br>
+                <strong>Entorno de Hardware:</strong> Apple MacBook Pro (Chip M1/ARM64)<br>
+                <strong>Software:</strong> Visual Studio Code, LM Studio
+            </div>
+        </div>
+
+        <div class="toc">
+            <h3 class="toc-title">Tabla de Contenidos</h3>
+            <ul>
+                <li><a href="#introduccion">Introducción y Objetivos</a></li>
+                <li><a href="#fase-1">Fase 1: Instalación del Agente</a></li>
+                <li><a href="#fase-2">Fase 2: Configuración del Entorno y Selección del Proveedor</a></li>
+                <li><a href="#fase-3">Fase 3: Despliegue del Servidor de Inferencia Local</a></li>
+                <li><a href="#fase-4">Fase 4: Vinculación de Puertos y Selección del Modelo</a></li>
+                <li><a href="#fase-5">Fase 5: Pruebas de Funcionamiento (Proof of Concept)</a></li>
+                <li><a href="#fase-6">Fase 6: Monitorización y Análisis de Recursos</a></li>
+                <li><a href="#fase-7">Fase 7: Verificación Final y Meta-Identidad</a></li>
+                <li><a href="#conclusion">Conclusión</a></li>
+            </ul>
+        </div>
+
+        <h2 id="introduccion">Introducción y Objetivos</h2>
+        <p>
+            El objetivo de esta práctica es implementar un Agente de IA local para el desarrollo de software, integrando
+            la extensión Kilo Code dentro del entorno Visual Studio Code y conectándola con el servidor de inferencia LM
+            Studio.
+        </p>
+        <p>
+            A diferencia de los asistentes en la nube, esta configuración permite ejecutar modelos de lenguaje (LLM)
+            directamente en el hardware del equipo, garantizando la privacidad del código y eliminando por completo la
+            dependencia de una conexión a internet. A continuación, se detallan los pasos de instalación,
+            configuración del servidor local (localhost) y las pruebas realizadas con el modelo
+            <code>Qwen3-VL-4B</code>.
+        </p>
+
+        <h2 id="fase-1">Fase 1: Instalación del Agente</h2>
+        <p>
+            El primer paso consiste en dotar a nuestro entorno de desarrollo de las capacidades agénticas necesarias.
+            Nos dirigimos al panel lateral de actividades y seleccionamos el icono de <em>Extensions</em> (atajo
+            Ctrl+Shift+X). En la barra de búsqueda del Marketplace, introducimos el término "Kilo
+            Code".
+        </p>
+        <p>
+            Localizamos la extensión oficial "Kilo Code: AI Coding Agent, Copilot, and Autocomplete" y hacemos clic en
+            el botón azul Install para proceder con la descarga e instalación de los binarios.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen1.png" alt="Captura del Marketplace de VS Code mostrando la extensión Kilo Code"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 1: Captura del Marketplace
+                de VS Code mostrando la extensión Kilo Code</figcaption>
+        </figure>
+
+        <p>
+            Tras la instalación, pulsamos en "Sign in", lo que generará un código de verificación único para este
+            dispositivo (ej. <code>QGN4-3D4L</code>) y presentará un botón "Open Browser" para completar el proceso de
+            seguridad a través del navegador web.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen2.png" alt="Captura del VS Code mostrando el código de verificación QGN4-3D4L"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 2: Captura del VS Code
+                mostrando el código de verificación QGN4-3D4L</figcaption>
+        </figure>
+
+        <p>
+            El navegador nos redirigirá a la pasarela de autenticación. Aquí debemos confirmar que el código mostrado
+            coincide. Tras verificar la identidad, hacemos clic en el botón "Authorize". El sistema
+            validará las credenciales mostrando "Authorization Successful", confirmando los permisos del agente.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen3.png"
+                alt="Captura del navegador mostrando la confirmación exitosa Authorization Successful"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 3: Captura del navegador
+                mostrando la confirmación exitosa "Authorization Successful"</figcaption>
+        </figure>
+
+        <p>
+            De vuelta en el editor, el agente ya estará activo. Desplegamos el menú de modos y elegimos la opción
+            <strong>Code (&lt;/&gt; Write, modify, and refactor code)</strong>. Esto especializa al
+            agente para tareas de programación pura, diferenciándolo de otros modos como Architect o Debug.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen4.png" alt="Captura del menú desplegable seleccionando el modo Code"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 4: Captura del menú
+                desplegable seleccionando el modo "Code"</figcaption>
+        </figure>
+
+        <h2 id="fase-2">Fase 2: Configuración del Entorno y Selección del Proveedor</h2>
+        <p>
+            Para indicar a la extensión que no utilizaremos la nube sino un proveedor local, accedemos al menú de
+            configuración haciendo clic en el icono de engranaje (Settings). En la sección
+            <em>Configuration Profile</em>, que por defecto usa "Kilo Gateway" , desplegamos el menú de
+            <em>API Provider</em>.
+        </p>
+        <p>
+            Cambiamos la configuración y seleccionamos <strong>LM Studio</strong> de la lista. Esto preparará
+            al agente para escuchar peticiones a través de un puerto local.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen5.png" alt="Captura de la selección de LM Studio en el menú de API Provider"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 5: Captura de la selección
+                de "LM Studio" en el menú de API Provider</figcaption>
+        </figure>
+
+        <h2 id="fase-3">Fase 3: Despliegue del Servidor de Inferencia Local</h2>
+        <p>
+            Para activar el "cerebro" del agente, abrimos la aplicación LM Studio y nos dirigimos a la pestaña de
+            desarrollador (icono <code>&lt;-&gt; Developer</code>). En el panel derecho, localizamos la
+            sección <em>Server Settings</em> y activamos el interruptor.
+        </p>
+        <p>
+            El servidor iniciará, cambiando su estado a verde (<em>Running</em>), y nos proporcionará una dirección
+            local y un puerto, generalmente <code>http://127.0.0.1:1234</code>.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen6.png" alt="Captura de LM Studio con el servidor activado mostrando Status: Running"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 6: Captura de LM Studio con
+                el servidor activado mostrando "Status: Running"</figcaption>
+        </figure>
+
+        <h2 id="fase-4">Fase 4: Vinculación de Puertos y Selección del Modelo</h2>
+        <p>
+            Volvemos a Visual Studio Code. En el campo <em>Base URL</em>, pegamos la dirección IP obtenida
+            (<code>http://127.0.0.1:1234</code>). En el apartado <em>Model ID</em>, especificamos el modelo
+            de inteligencia artificial descargado; en este caso utilizamos <code>qwen/qwen3-vl-4b</code>, un modelo
+            ligero y eficiente para visión y código.
+        </p>
+        <p>
+            Verificados los parámetros, guardamos la configuración pulsando "Save" y cerramos el panel con "Done". El
+            agente ya está listo para operar localmente.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen7.png"
+                alt="Captura de los settings de VS Code mostrando la URL local y el modelo Qwen configurado"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 7: Captura de los settings
+                de VS Code mostrando la URL local y el modelo Qwen configurado</figcaption>
+        </figure>
+
+        <h2 id="fase-5">Fase 5: Pruebas de Funcionamiento (Proof of Concept)</h2>
+        <p>
+            Para validar la integración, realizamos una petición de generación de código en lenguaje natural
+            (Prompting). En el chat del agente, introducimos la instrucción: <em>"Haz una página web sencilla
+                con un título que diga PROBANDO KILO CODE"</em>. Observamos cómo el agente procesa la
+            solicitud instantáneamente.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen8.png" alt="Captura del chat ingresando el prompt PROBANDO KILO CODE"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 8: Captura del chat
+                ingresando el prompt "PROBANDO KILO CODE"</figcaption>
+        </figure>
+
+        <h2 id="fase-6">Fase 6: Monitorización y Análisis de Recursos</h2>
+        <p>
+            Mientras el agente escribe el código, podemos auditar el proceso. En la consola de LM Studio, los logs de
+            actividad muestran cómo se generan los tokens de respuesta en tiempo real.
+        </p>
+        <p>
+            Al mismo tiempo, el monitor de actividad muestra que el procesador Apple M1 Max eleva su rendimiento para
+            realizar los cálculos de inferencia, confirmando que el proceso es 100% local. Inmediatamente
+            después de terminar, el uso de la CPU desciende drásticamente a niveles de reposo, demostrando la eficiencia
+            energética del modelo.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen9.png"
+                alt="Capturas combinadas de los logs de LM Studio y la gráfica de CPU del Apple M1 Max"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 9: Capturas combinadas de
+                los logs de LM Studio y la gráfica de CPU del Apple M1 Max</figcaption>
+        </figure>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen10.png" alt="Detalle adicional de monitorización"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 9b: Detalle adicional de
+                monitorización</figcaption>
+        </figure>
+
+        <h2 id="fase-7">Fase 7: Verificación Final y Meta-Identidad</h2>
+        <p>
+            Como paso final de la auditoría, interrogamos al agente para confirmar su configuración preguntándole:
+            <em>"¿Qué modelo de LLM estás usando?"</em>.
+        </p>
+        <p>
+            El agente confirma que está operando sobre <code>Qwen3-VL-4B</code> y que posee capacidades de visión y
+            generación de código, validando así que la integración entre VS Code y nuestro servidor local ha sido un
+            éxito total.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen11.png" alt="Captura del chat donde el agente demuestra su contexto previo"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 10: Captura del chat donde
+                el agente demuestra su contexto previo</figcaption>
+        </figure>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen12.png" alt="Verificación de la capacidad de visión del modelo"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 10b: Verificación de la
+                capacidad de visión del modelo</figcaption>
+        </figure>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen13.png" alt="Confirmación final del modelo en uso"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Figura 10c: Confirmación final
+                del modelo en uso</figcaption>
+        </figure>
+
+        <h2 id="conclusion">Conclusión</h2>
+        <p>
+            La integración entre Kilo Code y LM Studio ha sido exitosa, logrando establecer un entorno de desarrollo
+            asistido por IA totalmente offline. Las pruebas de concepto confirman que la API local responde
+            correctamente a las peticiones del editor.
+        </p>
+        <p>
+            Finalmente, el análisis de rendimiento valida que la carga de trabajo es gestionada íntegramente por el
+            procesador Apple M1 Max, demostrando que es posible ejecutar flujos de trabajo de ingeniería complejos de
+            manera local y segura sin recurrir a servicios externos.
+        </p>
+
+        <div class="footer">
+            <strong>Memoria de Proyecto: ASI</strong><br>
+            Módulo: Integración Local de Modelos Agénticos, VS Code y LM Studio.<br>
+        </div>
+    </div>
+
+</body>
+
+</html>

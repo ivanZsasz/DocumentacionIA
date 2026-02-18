@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proceso de Cuantización de LLM (Microsoft Phi-3)</title>
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --secondary-color: #1e293b;
+            --accent-color: #0f766e;
+            /* Teal oscuro elegante */
+            --accent-light: #ccfbf1;
+            --text-color: #334155;
+            --bg-color: #f8fafc;
+            --border-color: #cbd5e1;
+            --code-bg: #1e1e1e;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .document-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 70px 80px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 40px;
+            margin-bottom: 40px;
+        }
+
+        .header-tag {
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: var(--primary-color);
+            margin: 0 0 15px 0;
+            line-height: 1.2;
+        }
+
+        .author-meta {
+            margin-top: 25px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            text-align: left;
+            font-size: 0.95rem;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .author-meta strong {
+            color: var(--primary-color);
+        }
+
+        /* Tabla de Contenidos */
+        .toc {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 25px 35px;
+            margin-bottom: 50px;
+        }
+
+        .toc-title {
+            font-size: 1.4rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .toc>ul>li {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .toc ul ul {
+            padding-left: 20px;
+            margin-top: 5px;
+            font-weight: 400;
+            font-size: 0.95rem;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            transition: color 0.2s ease;
+        }
+
+        .toc a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-top: 60px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+            scroll-margin-top: 40px;
+        }
+
+        h2::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background-color: var(--accent-color);
+        }
+
+        h3 {
+            font-size: 1.35rem;
+            color: var(--accent-color);
+            margin-top: 40px;
+            scroll-margin-top: 40px;
+        }
+
+        p {
+            margin-bottom: 24px;
+            text-align: justify;
+            font-size: 1.05rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            margin: 25px 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Marcadores de imágenes */
+        .image-placeholder {
+            width: 100%;
+            min-height: 220px;
+            background-color: #f8fafc;
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 35px 0;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .image-placeholder:hover {
+            background-color: #f1f5f9;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .alert-box {
+            background: #fff1f2;
+            border-left: 6px solid #e11d48;
+            padding: 20px 25px;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .alert-box h4 {
+            margin-top: 0;
+            color: #be123c;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="document-container">
+        <div class="header">
+            <span class="header-tag">Documentación Técnica</span>
+            <h1>Proceso de Cuantización de LLM (Microsoft Phi-3)</h1>
+
+            <div class="author-meta">
+                <strong>Autor:</strong> Iván Tadeo<br>
+                <strong>Asignatura:</strong> Ampliación de Sistemas Informáticos (ASI)<br>
+                <strong>Proyecto:</strong> Cuantización<br>
+                <strong>Entorno:</strong> Apple MacBook Pro (Chip M1/ARM64)
+            </div>
+        </div>
+
+        <div class="toc">
+            <h3 class="toc-title">Tabla de Contenidos</h3>
+            <ul>
+                <li><a href="#seccion-1">1. Introducción y Objetivos</a></li>
+                <li><a href="#seccion-2">2. Configuración del Entorno de Desarrollo</a>
+                    <ul>
+                        <li><a href="#seccion-2-1">2.1. Obtención del código fuente (llama.cpp)</a></li>
+                        <li><a href="#seccion-2-2">2.2. Aislamiento del entorno (Virtual Environment)</a></li>
+                    </ul>
+                </li>
+                <li><a href="#seccion-3">3. Gestión de Dependencias y Resolución de Errores</a>
+                    <ul>
+                        <li><a href="#seccion-3-1">3.1. Primer intento de instalación</a></li>
+                        <li><a href="#seccion-3-2">3.2. Actualización de herramientas (PIP)</a></li>
+                        <li><a href="#seccion-3-3">3.3. Instalación manual de librerías críticas</a></li>
+                    </ul>
+                </li>
+                <li><a href="#seccion-4">4. Compilación de Herramientas (Adaptación a Apple Silicon)</a>
+                    <ul>
+                        <li><a href="#seccion-4-1">4.1. Instalación y configuración de CMake</a></li>
+                        <li><a href="#seccion-4-2">4.2. Compilación de los binarios</a></li>
+                    </ul>
+                </li>
+                <li><a href="#seccion-5">5. Descarga del Modelo Original (High Precision)</a>
+                    <ul>
+                        <li><a href="#seccion-5-1">5.1. Fallo inicial con Git LFS</a></li>
+                        <li><a href="#seccion-5-2">5.2. Solución alternativa mediante Script Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="#seccion-6">6. Proceso de Conversión a Formato GGUF</a>
+                    <ul>
+                        <li><a href="#seccion-6-1">6.1. Detección de librería faltante</a></li>
+                        <li><a href="#seccion-6-2">6.2. Conversión a precisión FP16</a></li>
+                    </ul>
+                </li>
+                <li><a href="#seccion-7">7. Cuantización (El Proceso de Compresión)</a>
+                    <ul>
+                        <li><a href="#seccion-7-1">7.1. Ejecución de llama-quantize</a></li>
+                        <li><a href="#seccion-7-2">7.2. Progreso y reducción por capas</a></li>
+                    </ul>
+                </li>
+                <li><a href="#seccion-8">8. Verificación de Almacenamiento y Resultados</a></li>
+                <li><a href="#seccion-9">9. Pruebas de Funcionamiento en Entorno Local</a></li>
+                <li><a href="#conclusion">Conclusión</a></li>
+            </ul>
+        </div>
+
+        <h2 id="seccion-1">1. Introducción y Objetivos</h2>
+        <p>
+            El propósito de esta práctica es realizar la optimización de un Modelo de Lenguaje Grande (LLM) para su
+            ejecución en entornos locales con recursos limitados. El proceso, conocido como cuantización, consiste en
+            reducir la precisión numérica de los parámetros del modelo (de 16 bits a 4 bits) para disminuir
+            drásticamente su consumo de memoria RAM y espacio en disco, manteniendo su capacidad de inferencia.
+        </p>
+        <p>
+            Se ha trabajado con el modelo <code>Phi-3-mini-4k-instruct</code> de Microsoft, utilizando la suite de
+            herramientas <code>llama.cpp</code> compilada nativamente para la arquitectura ARM64 de Apple.
+        </p>
+
+        <h2 id="seccion-2">2. Configuración del Entorno de Desarrollo</h2>
+
+        <h3 id="seccion-2-1">2.1. Obtención del código fuente (llama.cpp)</h3>
+        <p>
+            El primer paso consistió en preparar el directorio de trabajo y clonar el repositorio de
+            <code>llama.cpp</code>. Esta herramienta es fundamental ya que nos permite interactuar con los tensores del
+            modelo a bajo nivel en C++.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen1.png" alt="Ejecución del comando git clone del repositorio llama.cpp"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 1: Ejecución del comando git
+                clone del repositorio llama.cpp</figcaption>
+        </figure>
+
+
+        <h3 id="seccion-2-2">2.2. Aislamiento del entorno (Virtual Environment)</h3>
+        <p>
+            Para garantizar que las librerías necesarias no entren en conflicto con otras instalaciones de Python en el
+            sistema macOS, se procedió a crear y activar un entorno virtual (venv). Esto encapsula las dependencias
+            dentro de la carpeta del proyecto.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen2.png" alt="Comandos cd llama.cpp, python3 -m venv y activación del entorno"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 2: Comandos cd llama.cpp,
+                python3 -m venv y activación del entorno</figcaption>
+        </figure>
+
+        <h2 id="seccion-3">3. Gestión de Dependencias y Resolución de Errores</h2>
+
+        <h3 id="seccion-3-1">3.1. Primer intento de instalación</h3>
+        <div class="alert-box">
+            <h4>Error de Dependencias</h4>
+            <p>Intentamos instalar las dependencias automáticas listadas en <code>requirements.txt</code>. Sin embargo,
+                nos encontramos con un error al intentar abrir el archivo y una advertencia sobre la versión de pip.</p>
+        </div>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen3.png" alt="Error 'Could not open requirements file' y advertencia de versión de pip"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 3: Error "Could not open
+                requirements file" y advertencia de versión de pip</figcaption>
+        </figure>
+
+        <h3 id="seccion-3-2">3.2. Actualización de herramientas (PIP)</h3>
+        <p>
+            El sistema nos advirtió que la versión del instalador pip era antigua (21.2.4), lo que podría impedir
+            encontrar versiones modernas compatibles. Procedimos a actualizar el gestor de paquetes.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen4.png" alt="Ejecución del comando pip install --upgrade pip"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 4: Ejecución del comando pip
+                install --upgrade pip</figcaption>
+        </figure>
+
+        <h3 id="seccion-3-3">3.3. Instalación manual de librerías críticas</h3>
+        <p>
+            Para solucionar los problemas previos, optamos por una instalación manual y quirúrgica de las librerías
+            estrictamente necesarias para la conversión: <code>numpy</code>, <code>sentencepiece</code>,
+            <code>transformers</code> y <code>gguf</code>.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen5.png" alt="Ejecución de pip install numpy sentencepiece transformers gguf"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 5: Ejecución de pip install
+                numpy sentencepiece transformers gguf</figcaption>
+        </figure>
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen6.png" alt="Descarga e instalación exitosa de los paquetes y sus metadatos"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 6: Descarga e instalación
+                exitosa de los paquetes y sus metadatos</figcaption>
+        </figure>
+
+        <h2 id="seccion-4">4. Compilación de Herramientas (Adaptación a Apple Silicon)</h2>
+
+        <h3 id="seccion-4-1">4.1. Instalación y configuración de CMake</h3>
+        <p>
+            Dado que <code>llama.cpp</code> utiliza CMake para su construcción, procedimos a instalarlo. Tras un intento
+            fallido con brew, lo instalamos exitosamente a través de pip. Posteriormente, configuramos la "build" para
+            la arquitectura del chip M1.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen7.png" alt="Instalación de cmake vía pip tras el fallo de brew"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 7: Instalación de cmake vía
+                pip tras el fallo de brew</figcaption>
+        </figure>
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen8.png"
+                alt="Comando cmake -B build detectando el compilador AppleClang y la arquitectura ARM64"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 8: Comando cmake -B build
+                detectando el compilador AppleClang y la arquitectura ARM64</figcaption>
+        </figure>
+
+        <h3 id="seccion-4-2">4.2. Compilación de los binarios</h3>
+        <p>
+            Ejecutamos la compilación en modo Release para generar los binarios optimizados para máxima velocidad, lo
+            cual es esencial para que la cuantización sea eficiente.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen9.png"
+                alt="Proceso de construcción (Building C/CXX object...) con cmake --build build --config Release"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 9: Proceso de construcción
+                (Building C/CXX object...) con cmake --build build --config Release</figcaption>
+        </figure>
+
+        <h2 id="seccion-5">5. Descarga del Modelo Original (High Precision)</h2>
+
+        <h3 id="seccion-5-1">5.1. Fallo inicial con Git LFS</h3>
+        <p>
+            Al intentar clonar el repositorio del modelo usando Git, nos percatamos de un problema: al no tener
+            configurado correctamente <code>git-lfs</code> (Large File Storage), el comando falló.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen10.png" alt="Error de comando no encontrado al ejecutar git lfs install y clonado posterior"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 10: Error de comando no
+                encontrado al ejecutar git lfs install y clonado posterior</figcaption>
+        </figure>
+
+        <h3 id="seccion-5-2">5.2. Solución alternativa mediante Script Python</h3>
+        <p>
+            Para solventar la descarga de los tensores pesados, implementamos un script en Python utilizando la librería
+            <code>huggingface_hub</code>, lo que forzó la descarga directa de los archivos reales (los .safetensors) a
+            nuestro directorio local.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen11.png"
+                alt="Ejecución del script Python snapshot_download descargando los archivos safetensors"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 11: Ejecución del script
+                Python snapshot_download descargando los archivos safetensors</figcaption>
+        </figure>
+
+        <h2 id="seccion-6">6. Proceso de Conversión a Formato GGUF</h2>
+
+        <h3 id="seccion-6-1">6.1. Detección de librería faltante</h3>
+        <p>
+            Antes de cuantizar, debemos unificar los tensores y convertirlos al formato GGUF base. Durante el intento,
+            el sistema nos devolvió un error por la ausencia de un módulo necesario.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen12.png" alt="Error 'ModuleNotFoundError' por falta de la librería torch u otra dependencia"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 12: Error
+                "ModuleNotFoundError" por falta de la librería torch u otra dependencia</figcaption>
+        </figure>
+
+        <h3 id="seccion-6-2">6.2. Conversión a precisión FP16</h3>
+        <p>
+            Una vez resueltas las dependencias finales, ejecutamos el script de conversión en Python para generar el
+            archivo base GGUF conservando la precisión original de 16 bits (FP16).
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen13.png"
+                alt="Ejecución exitosa de convert_hf_to_gguf.py mapeando los tensores al formato FP16"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 13: Ejecución exitosa de
+                convert_hf_to_gguf.py mapeando los tensores al formato FP16</figcaption>
+        </figure>
+
+        <h2 id="seccion-7">7. Cuantización (El Proceso de Compresión)</h2>
+
+        <h3 id="seccion-7-1">7.1. Ejecución de llama-quantize</h3>
+        <p>
+            Llegamos al núcleo de la práctica: utilizamos el binario compilado <code>llama-quantize</code> y aplicamos
+            el método <strong>Q4_K_M (4-bit K-Quants Medium)</strong>, que reduce los pesos numéricos minimizando la
+            pérdida de inteligencia.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen14.png" alt="Ejecución del comando de cuantización hacia el archivo destino q4_k_m"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 14: Ejecución del comando de
+                cuantización hacia el archivo destino q4_k_m</figcaption>
+        </figure>
+
+        <h3 id="seccion-7-2">7.2. Progreso y reducción por capas</h3>
+        <p>
+            Durante la ejecución, la consola nos muestra detalladamente cómo se comprime cada tensor de la red neuronal.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen15.png" alt="Terminal mostrando el log detallado de la reducción de tamaño capa por capa"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 15: Terminal mostrando el
+                log detallado de la reducción de tamaño capa por capa</figcaption>
+        </figure>
+
+        <h2 id="seccion-8">8. Verificación de Almacenamiento y Resultados</h2>
+        <p>
+            Finalizado el proceso, verificamos el impacto real en nuestro disco duro mediante comandos de consola.
+            Comparamos el peso del modelo original (FP16) frente a nuestro nuevo modelo optimizado.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen16.png" alt="Imagen donde se ven los dos modelos el original Phi-3 y el cuantizado Phi-3"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 16: Imagen donde se ven los
+                dos modelos el original Phi-3 y el cuantizado Phi-3</figcaption>
+        </figure>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen17.png" alt="Directorio mostrando el archivo .gguf cuantizado final"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 17: Directorio mostrando el
+                archivo .gguf cuantizado final</figcaption>
+        </figure>
+
+        <h2 id="seccion-9">9. Pruebas de Funcionamiento en Entorno Local</h2>
+        <p>
+            El último paso es comprobar que el modelo sigue siendo inteligente. Lo importamos en la interfaz gráfica de
+            LM Studio y realizamos una consulta de prueba.
+        </p>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen18.png"
+                alt="Captura de LM Studio cargando el modelo Phi-3 cuantizado y respondiendo a un prompt de prueba"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 18: Captura de LM Studio
+                cargando el modelo Phi-3 cuantizado y respondiendo a un prompt de prueba</figcaption>
+        </figure>
+
+        <figure style="margin: 30px 0; text-align: center;">
+            <img src="Imagen19.png" alt="Prueba adicional de inferencia en LM Studio"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <figcaption style="margin-top: 10px; color: #64748b; font-size: 0.9rem;">Imagen 19: Prueba adicional de
+                inferencia en LM Studio</figcaption>
+        </figure>
+
+        <h2 id="conclusion">Conclusión</h2>
+        <p>
+            La práctica ha concluido exitosamente con la optimización del modelo Microsoft Phi-3, logrando una enorme
+            reducción en su tamaño mediante cuantización INT4, habilitando su ejecución fluida en entornos locales.
+        </p>
+        <p>
+            El proceso validó el despliegue de Inteligencia Artificial en hardware de consumo (Apple Silicon) tras
+            superar múltiples desafíos técnicos críticos (compilación nativa con CMake, gestión manual de dependencias y
+            scripts de descarga), confirmando que la eficiencia obtenida no compromete la capacidad de razonamiento del
+            modelo.
+        </p>
+
+        <div class="footer">
+            <strong>Memoria de Proyecto: ASI</strong><br>
+            Módulo: Cuantización de LLMs, llama.cpp y Optimización de Memoria.<br>
+        </div>
+    </div>
+
+</body>
+
+</html>
